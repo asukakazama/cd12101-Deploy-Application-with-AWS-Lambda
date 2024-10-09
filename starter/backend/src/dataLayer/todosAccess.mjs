@@ -75,15 +75,16 @@ export class TodoAccess {
     })
   }
 
-  async uploadImageUrl(userId, todoId, imageUrl) {
-    console.log(`Uploading an image ${imageUrl}`)
+  async uploadImageUrl(userId, todoId, imageId, bucketName) {
+    console.log(`Uploading an image ${imageId}`)
 
     const result = await this.getTodos(userId, todoId)
     if (result.length === 0) throw new Error('No record found')
+    const attachmentUrl = `https://${bucketName}.s3.amazonaws.com/${imageId}`
 
     const updatedItem = {
         ...result[0],
-        attachmentUrl: imageUrl
+        attachmentUrl: attachmentUrl
     }
 
     await this.dynamoDbClient.put({
@@ -91,7 +92,7 @@ export class TodoAccess {
         Item: updatedItem
     })
 
-    return imageUrl
+    return attachmentUrl
   }
 
   async getTodos(userId, todoId) {
