@@ -28,3 +28,7 @@ export async function updateTodo(updateTodoRequest, userId, todoId) {
 export async function deleteTodo(userId, todoId) {
     return todosAccess.deleteTodo(userId, todoId)
 }
+
+export async function uploadImageUrl(userId, todoId, imageUrl) {
+    return todosAccess.uploadImageUrl(userId, todoId, imageUrl)
+}

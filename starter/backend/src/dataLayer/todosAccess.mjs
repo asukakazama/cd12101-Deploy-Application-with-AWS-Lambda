@@ -43,19 +43,11 @@ export class TodoAccess {
   async updateTodo(todo, userId, todoId) {
     console.log(`Updating a todo ${todoId}`)
 
-    const result = await this.dynamoDbClient.query({
-        TableName: this.todosTable,
-        KeyConditionExpression: 'userId = :userId and todoId = :todoId',
-        ExpressionAttributeValues: {
-            ':userId': userId,
-            ':todoId': todoId
-        }
-    })
-
-    if (result.Items.length === 0) throw new Error('No record found')
+    const result = await this.getTodos(userId, todoId)
+    if (result.length === 0) throw new Error('No record found')
 
     const updatedItem = {
-        ...result.Items[0],
+        ...result[0],
         ...todo,
         done: true
     }
@@ -71,6 +63,38 @@ export class TodoAccess {
   async deleteTodo(userId, todoId) {
     console.log(`Deleting a todo ${todoId}`)
 
+    const result = await this.getTodos(userId, todoId)
+    if (result.length === 0) throw new Error('No record found')
+
+    await this.dynamoDbClient.delete({
+        TableName: this.todosTable,
+        Key: {
+            userId: userId,
+            todoId: todoId
+        }
+    })
+  }
+
+  async uploadImageUrl(userId, todoId, imageUrl) {
+    console.log(`Uploading an image ${imageUrl}`)
+
+    const result = await this.getTodos(userId, todoId)
+    if (result.length === 0) throw new Error('No record found')
+
+    const updatedItem = {
+        ...result[0],
+        attachmentUrl: imageUrl
+    }
+
+    await this.dynamoDbClient.put({
+        TableName: this.todosTable,
+        Item: updatedItem
+    })
+
+    return imageUrl
+  }
+
+  async getTodos(userId, todoId) {
     const result = await this.dynamoDbClient.query({
         TableName: this.todosTable,
         KeyConditionExpression: 'userId = :userId and todoId = :todoId',
@@ -80,14 +104,6 @@ export class TodoAccess {
         }
     })
 
-    if (result.Items.length === 0) throw new Error('No record found')
-
-    await this.dynamoDbClient.delete({
-        TableName: this.todosTable,
-        Key: {
-            userId: userId,
-            todoId: todoId
-        }
-    })
+    return result.Items
   }
 }
