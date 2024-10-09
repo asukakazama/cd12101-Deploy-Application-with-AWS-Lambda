@@ -1,9 +1,10 @@
-import { parseUserId } from '../auth/utils.mjs'
+import jsonwebtoken from 'jsonwebtoken'
 
 export function getUserId(event) {
   const authorization = event.headers.Authorization
   const split = authorization.split(' ')
   const jwtToken = split[1]
 
-  return parseUserId(jwtToken)
+  const decodedJwt = jsonwebtoken.decode(jwtToken)
+  return decodedJwt.sub
 }
