@@ -6,33 +6,24 @@ export class TodoAccess {
   constructor(
     documentClient = AWSXRay.captureAWSv3Client(new DynamoDB()),
     todosTable = process.env.TODOS_TABLE,
-    userIdIndex = process.env.USER_ID_INDEX
+    todosCreatedAtIndex = process.env.CreatedAtIndex
   ) {
     this.documentClient = documentClient
     this.todosTable = todosTable
     this.dynamoDbClient = DynamoDBDocument.from(this.documentClient)
-    this.userIdIndex = userIdIndex
+    this.todosCreatedAtIndex = todosCreatedAtIndex
   }
-
-//   async getAllGroups() {
-//     console.log('Getting all groups')
-
-//     const result = await this.dynamoDbClient.scan({
-//       TableName: this.todosTable
-//     })
-//     return result.Items
-//   }
 
   async getTodosPerUserId(userId) {
     console.log(`Getting all todos per user ${userId}`)
 
     const result = await this.dynamoDbClient.query({
-      TableName: this.todosTable,
-      IndexName: this.userIdIndex,
-      KeyConditionExpression: 'userId = :userId',
-      ExpressionAttributeValues: {
-        ':userId': userId
-      }
+        TableName: this.todosTable,
+        IndexName: this.todosCreatedAtIndex,
+        KeyConditionExpression: 'userId = :userId',
+        ExpressionAttributeValues: {
+            ':userId': userId
+        }
     })
   
     return result.Items
@@ -42,10 +33,61 @@ export class TodoAccess {
     console.log(`Creating a todo ${todo.id} with user ${todo.userId}`)
 
     await this.dynamoDbClient.put({
-      TableName: this.todosTable,
-      Item: todo
+        TableName: this.todosTable,
+        Item: todo
     })
 
     return todo
+  }
+
+  async updateTodo(todo, userId, todoId) {
+    console.log(`Updating a todo ${todoId}`)
+
+    const result = await this.dynamoDbClient.query({
+        TableName: this.todosTable,
+        KeyConditionExpression: 'userId = :userId and todoId = :todoId',
+        ExpressionAttributeValues: {
+            ':userId': userId,
+            ':todoId': todoId
+        }
+    })
+
+    if (result.Items.length === 0) throw new Error('No record found')
+
+    const updatedItem = {
+        ...result.Items[0],
+        ...todo,
+        done: true
+    }
+
+    await this.dynamoDbClient.put({
+        TableName: this.todosTable,
+        Item: updatedItem
+    })
+
+    return updatedItem
+  }
+
+  async deleteTodo(userId, todoId) {
+    console.log(`Deleting a todo ${todoId}`)
+
+    const result = await this.dynamoDbClient.query({
+        TableName: this.todosTable,
+        KeyConditionExpression: 'userId = :userId and todoId = :todoId',
+        ExpressionAttributeValues: {
+            ':userId': userId,
+            ':todoId': todoId
+        }
+    })
+
+    if (result.Items.length === 0) throw new Error('No record found')
+
+    await this.dynamoDbClient.delete({
+        TableName: this.todosTable,
+        Key: {
+            userId: userId,
+            todoId: todoId
+        }
+    })
   }
 }
