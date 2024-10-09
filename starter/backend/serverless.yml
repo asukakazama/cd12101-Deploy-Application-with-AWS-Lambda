@@ -224,4 +224,9 @@ resources:
               Principal: '*'
               Action: 's3:GetObject'
               Resource: 'arn:aws:s3:::${self:provider.environment.IMAGES_S3_BUCKET}/*'
+            - Sid: PublicWriteForPutBucketObjects
+              Effect: Allow
+              Principal: '*'
+              Action: 's3:PutObject'
+              Resource: 'arn:aws:s3:::${self:provider.environment.IMAGES_S3_BUCKET}/*'
         Bucket: !Ref AttachmentsBucket
